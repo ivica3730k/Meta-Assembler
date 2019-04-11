@@ -82,10 +82,21 @@ int main(int argc, char** argv)
 			linenum++;
 			if (line == "")
 				continue;
-
-			std::istringstream iss(line);
-			std::vector<std::string> results((std::istream_iterator<std::string>(iss)),std::istream_iterator<std::string>());
-
+			int spaces = std::count(line.begin(), line.end(), ' ');
+			
+			std::vector<std::string>results;
+			if (spaces != 0) {
+				std::istringstream iss(line);
+				std::vector<std::string> filter_results((std::istream_iterator<std::string>(iss)), std::istream_iterator<std::string>());
+				results.push_back(filter_results[0]);
+				results.push_back(filter_results[1]);
+			}
+			else {
+				results.push_back(line);
+				results.push_back("");
+			}
+	
+		
 			bool isMnemonicValid = false;
 			for (int i = 0; i < 10; i++) {
 				if (mnemonics[i].name == results[0]) {
@@ -96,7 +107,7 @@ int main(int argc, char** argv)
 						return (0);
 					}
 
-					std::cout <<decToHex(pc)<<":"<< mnemonics[i].code<<results[1] << std::endl;
+					std::cout <<decToHex(pc)<<":"<< mnemonics[i].code << std::endl;
 					pc++;
 					isMnemonicValid = true;
 					break;
