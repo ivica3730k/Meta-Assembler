@@ -1,21 +1,112 @@
-// Meta_Assembler.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include "pch.h"
 #include <iostream>
+#include <vector>
+#include <algorithm>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iterator>
 
-int main()
+class mnemonic {
+public:
+	mnemonic(const std::string& _name, const std::string& _code);
+	std::string name;
+	std::string code;
+	int arglen;
+};
+
+mnemonic::mnemonic(const std::string& _name, const std::string& _code)
 {
-    std::cout << "Hello World!\n"; 
+	name = _name;
+	code = _code;
+	arglen = 4 - code.length();
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
+mnemonic mnemonics[10] = {
 
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+	{ "ADDI", "D" },
+	{ "JMP", "E" },
+	{ "MOVEI", "C" },
+	{ "MOVE", "B" },
+	{ "STORE", "A" },
+	{ "LDD", "9" },
+	{ "BZ", "FE" },
+	{ "BNZ", "FD" },
+	{ "STA", "FFFF" },
+	{ "STA+", "FFFE" }
+
+};
+
+int main(int argc, char** argv)
+{
+
+	//----------open file that is passed with -f argument----------
+	struct file {
+		bool valid = false;
+		std::string name = "";
+	};
+
+	file file;
+
+	for (int i = 0; i < argc; ++i) {
+
+		if (strcmp(argv[i], "-f") == 0) {
+			++i;
+			std::cout << "Filename that you want to read is: " << argv[i] << std::endl;
+			file.name = argv[i];
+			file.valid = true;
+		}
+	}
+
+	if (file.valid == false) {
+		//throw std::runtime_error("Error, no file specified. Specify file using -f 'filename'");
+		std::cout << "Error, no file specified. Specify file using -f 'filename'" << std::endl;
+		return 0;
+	}
+
+	//----------if file is valid read file line by line-----------
+	std::ifstream myfile(file.name);
+	if (myfile.is_open()) {
+		unsigned long int linenum = 0;
+		std::string line;
+
+		while (getline(myfile, line)) {
+			linenum++;
+			if (line == "")
+				continue;
+
+			std::istringstream iss(line);
+			std::vector<std::string> results((std::istream_iterator<std::string>(iss)),std::istream_iterator<std::string>());
+
+			bool isMnemonicValid = false;
+			for (int i = 0; i < 10; i++) {
+				if (mnemonics[i].name == results[0]) {
+
+					if (results[1].length() != mnemonics[i].arglen) {
+						std::cout << "Error on line " << linenum << " :";
+						std::cout << "Operation " << mnemonics[i].name << " can only be used with " << mnemonics[i].arglen << " byte argument!" << std::endl;
+						return (0);
+					}
+
+					std::cout << mnemonics[i].code << std::endl;
+					isMnemonicValid = true;
+					break;
+				}
+			}
+
+			if (isMnemonicValid == false) {
+				std::cout << "Error on line " << linenum << ": ";
+				std::cout << "Operation " << results[0] << " not on list of valid operations, aborting!" << std::endl;
+				return 0;
+			}
+		}
+		myfile.close();
+	}
+
+	else {
+		std::cout << "Unable to open file";
+		return 0;
+	}
+
+	return 1;
+}
