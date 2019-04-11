@@ -37,6 +37,13 @@ mnemonic mnemonics[10] = {
 
 };
 
+std::string decToHex(int decimal_value) {
+	std::stringstream ss;
+	ss << std::hex << decimal_value; // int decimal_value
+	std::string res(ss.str());
+	return res;
+}
+
 int main(int argc, char** argv)
 {
 
@@ -67,9 +74,10 @@ int main(int argc, char** argv)
 	//----------if file is valid read file line by line-----------
 	std::ifstream myfile(file.name);
 	if (myfile.is_open()) {
+		unsigned long int pc = 0;
 		unsigned long int linenum = 0;
+		std::vector<std::string>cdms;
 		std::string line;
-
 		while (getline(myfile, line)) {
 			linenum++;
 			if (line == "")
@@ -88,7 +96,8 @@ int main(int argc, char** argv)
 						return (0);
 					}
 
-					std::cout << mnemonics[i].code << std::endl;
+					std::cout <<decToHex(pc)<<":"<< mnemonics[i].code<<results[1] << std::endl;
+					pc++;
 					isMnemonicValid = true;
 					break;
 				}
