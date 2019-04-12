@@ -79,6 +79,7 @@ int main(int argc, char** argv)
 		std::vector<std::string>cdms;
 		std::string line;
 		while (getline(myfile, line)) {
+			std::transform(line.begin(), line.end(), line.begin(), ::toupper);
 			linenum++;
 			if (line == "")
 				continue;
