@@ -84,13 +84,14 @@ int main(int argc, char** argv)
 			if (line == "")
 				continue;
 			int spaces = std::count(line.begin(), line.end(), ' ');
-			
+			bool hasData = false;
 			std::vector<std::string>results;
 			if (spaces != 0) {
 				std::istringstream iss(line);
 				std::vector<std::string> filter_results((std::istream_iterator<std::string>(iss)), std::istream_iterator<std::string>());
 				results.push_back(filter_results[0]);
 				results.push_back(filter_results[1]);
+				hasData = true;
 			}
 			else {
 				results.push_back(line);
@@ -108,7 +109,19 @@ int main(int argc, char** argv)
 						return (0);
 					}
 
-					std::cout <<decToHex(pc)<<":"<< mnemonics[i].code << std::endl;
+					if (hasData == false) {
+						std::string cache = decToHex(pc);
+						cache += ":";
+						cache += mnemonics[i].code;
+						cdms.push_back(cache);
+					}
+					else {
+						std::string cache = decToHex(pc);
+						cache += ":";
+						cache += mnemonics[i].code;
+						cache += results[1];
+						cdms.push_back(cache);
+					}
 					pc++;
 					isMnemonicValid = true;
 					break;
@@ -121,7 +134,20 @@ int main(int argc, char** argv)
 				return 0;
 			}
 		}
-		myfile.close();
+		myfile.close();		
+		size_t lastindex = file.name.find_last_of(".");
+		file.name = file.name.substr(0, lastindex);
+		file.name += ".cdm";
+		
+		std::ofstream myfile(file.name);
+
+		if (myfile.is_open()) {
+			std::vector<std::string>::iterator i;
+			for (i = cdms.begin(); i < cdms.end(); ++i) {
+				std::string cache = *i;
+				myfile << cache << std::endl;
+			}
+		}
 	}
 
 	else {
