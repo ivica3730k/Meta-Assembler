@@ -9,33 +9,21 @@
 
 class mnemonic {
 public:
-	mnemonic(const std::string& _name, const std::string& _code);
+	mnemonic(const std::string& _name, const std::string& _code,int bitc);
 	std::string name;
 	std::string code;
 	int arglen;
+	
 };
 
-mnemonic::mnemonic(const std::string& _name, const std::string& _code)
+mnemonic::mnemonic(const std::string& _name, const std::string& _code,int bitc)
 {
 	name = _name;
 	code = _code;
-	arglen = 4 - code.length();
+	arglen = (bitc/4) - code.length();
 }
 
-mnemonic mnemonics[10] = {
 
-	{ "ADDI", "D" },
-	{ "JMP", "E" },
-	{ "MOVEI", "C" },
-	{ "MOVE", "B" },
-	{ "STORE", "A" },
-	{ "LDD", "9" },
-	{ "BZ", "FE" },
-	{ "BNZ", "FD" },
-	{ "STA", "FFFF" },
-	{ "STA+", "FFFE" }
-
-};
 
 std::string decToHex(int decimal_value) {
 	std::stringstream ss;
@@ -44,9 +32,10 @@ std::string decToHex(int decimal_value) {
 	return res;
 }
 
+
 int main(int argc, char** argv)
 {
-
+	int bits = 16; //default arhitecture for system is 16 bits
 	//----------open file that is passed with -f argument----------
 	struct file {
 		bool valid = false;
@@ -59,11 +48,36 @@ int main(int argc, char** argv)
 
 		if (strcmp(argv[i], "-f") == 0) {
 			++i;
-			std::cout << "Filename that you want to read is: " << argv[i] << std::endl;
+			//std::cout << "Filename that you want to read is: " << argv[i] << std::endl;
 			file.name = argv[i];
 			file.valid = true;
+			continue;
+		}
+
+		if (strcmp(argv[i], "-bit") == 0) {
+			++i;
+			//std::cout << "Filename that you want to read is: " << argv[i] << std::endl;
+			bits = std::stoi(argv[i]);
+			//std::cout << bitN;
+			continue;
 		}
 	}
+
+	
+	mnemonic mnemonics[10] = {
+
+	{ "ADDI", "D",bits },
+	{ "JMP", "E",bits },
+	{ "MOVEI", "C",bits },
+	{ "MOVE", "B" ,bits},
+	{ "STORE", "A",bits },
+	{ "LDD", "9",bits },
+	{ "BZ", "FE",bits },
+	{ "BNZ", "FD",bits},
+	{ "STA", "FFFF",bits },
+	{ "STA+", "FFFE",bits }
+
+	};
 
 	if (file.valid == false) {
 		//throw std::runtime_error("Error, no file specified. Specify file using -f 'filename'");
