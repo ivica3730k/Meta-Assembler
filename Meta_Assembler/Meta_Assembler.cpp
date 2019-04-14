@@ -23,15 +23,12 @@ mnemonic::mnemonic(const std::string& _name, const std::string& _code,int bitc)
 	arglen = (bitc/4) - code.length();
 }
 
-
-
 std::string decToHex(int decimal_value) {
 	std::stringstream ss;
 	ss << std::hex << decimal_value; // int decimal_value
 	std::string res(ss.str());
 	return res;
 }
-
 
 int main(int argc, char** argv)
 {
@@ -41,9 +38,7 @@ int main(int argc, char** argv)
 		bool valid = false;
 		std::string name = "";
 	};
-
 	file file;
-
 	for (int i = 0; i < argc; ++i) {
 
 		if (strcmp(argv[i], "-f") == 0) {
@@ -63,7 +58,6 @@ int main(int argc, char** argv)
 		}
 	}
 
-	
 	mnemonic mnemonics[10] = {
 
 	{ "ADDI", "D",bits },
@@ -112,7 +106,6 @@ int main(int argc, char** argv)
 				results.push_back("");
 			}
 	
-		
 			bool isMnemonicValid = false;
 			for (int i = 0; i < 10; i++) {
 				if (mnemonics[i].name == results[0]) {
@@ -151,8 +144,7 @@ int main(int argc, char** argv)
 		myfile.close();		
 		size_t lastindex = file.name.find_last_of(".");
 		file.name = file.name.substr(0, lastindex);
-		file.name += ".cdm";
-		
+		file.name += ".cdm";	
 		std::ofstream myfile(file.name);
 
 		if (myfile.is_open()) {
