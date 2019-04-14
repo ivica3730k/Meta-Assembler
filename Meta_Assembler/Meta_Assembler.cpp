@@ -7,16 +7,15 @@
 #include <sstream>
 #include <iterator>
 
-class mnemonic {
+class instruction {
 public:
-	mnemonic(const std::string& _name, const std::string& _code,int bitc);
+	instruction(const std::string& _name, const std::string& _code,int bitc);
 	std::string name;
 	std::string code;
 	int arglen;
-	
 };
 
-mnemonic::mnemonic(const std::string& _name, const std::string& _code,int bitc)
+instruction::instruction(const std::string& _name, const std::string& _code,int bitc)
 {
 	name = _name;
 	code = _code;
@@ -43,7 +42,6 @@ int main(int argc, char** argv)
 
 		if (strcmp(argv[i], "-f") == 0) {
 			++i;
-			//std::cout << "Filename that you want to read is: " << argv[i] << std::endl;
 			file.name = argv[i];
 			file.valid = true;
 			continue;
@@ -51,14 +49,12 @@ int main(int argc, char** argv)
 
 		if (strcmp(argv[i], "-bit") == 0) {
 			++i;
-			//std::cout << "Filename that you want to read is: " << argv[i] << std::endl;
 			bits = std::stoi(argv[i]);
-			//std::cout << bitN;
 			continue;
 		}
 	}
 
-	mnemonic mnemonics[10] = {
+	instruction instructions[10] = {
 
 	{ "ADDI", "D",bits },
 	{ "JMP", "E",bits },
@@ -108,24 +104,24 @@ int main(int argc, char** argv)
 	
 			bool isMnemonicValid = false;
 			for (int i = 0; i < 10; i++) {
-				if (mnemonics[i].name == results[0]) {
+				if (instructions[i].name == results[0]) {
 
-					if (results[1].length() != mnemonics[i].arglen) {
+					if (results[1].length() != instructions[i].arglen) {
 						std::cout << "Error on line " << linenum << " :";
-						std::cout << "Operation " << mnemonics[i].name << " can only be used with " << mnemonics[i].arglen << " byte argument!" << std::endl;
+						std::cout << "Operation " << instructions[i].name << " can only be used with " << instructions[i].arglen << " byte argument!" << std::endl;
 						return (0);
 					}
 
 					if (hasData == false) {
 						std::string cache = decToHex(pc);
 						cache += ":";
-						cache += mnemonics[i].code;
+						cache += instructions[i].code;
 						cdms.push_back(cache);
 					}
 					else {
 						std::string cache = decToHex(pc);
 						cache += ":";
-						cache += mnemonics[i].code;
+						cache += instructions[i].code;
 						cache += results[1];
 						cdms.push_back(cache);
 					}
