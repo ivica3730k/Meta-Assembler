@@ -69,6 +69,25 @@ int main(int argc, char** argv)
 
 	};
 
+	std::vector<std::string>keywords = { "$","DF","GROUP","ORG","*","DGROUP","GT","%OUT","+",
+		"DOSSEG","HIGH","PAGE","_","DQ","IF","PARA,",".","DS","IF1","PROC", "/" ,"DT",
+		"IF2","PTR","=","DUP","IFB","PUBLIC","?","DW","IFDEF","PURGE","DWORD",
+		"IFGIF","QWORD",".186","ELSE","IFDE",".RADIX",".286","END","IFIDN",
+		"RECORD",".286P","ENDIF","IFNB","REPT",".287","ENDM","IFNDEF",".SALL"
+		,".386","ENDP","INCLUDE","SEG",".386P","ENDS","INCLUDELIB","SEGMENT",
+		".387","EQ","IRP",".SEQ",".8086","EQU","IRPC",".SFCOND",".8087",".ERR",
+		"LABEL","SHL","ALIGN",".ERR1",".LALL","SHORT",".ALPHA",".ERR2","LARGE",
+		"SHR","AND",".ERRB","LE","SIZE","ASSUME",".ERRDEF","LENGTH","SMALL","AT",
+		".ERRDIF",".LFCOND","STACK","BYTE",".ERRE",".LIST","@STACK",".CODE",
+		".ERRIDN","LOCAL",".STACK","@CODE",".ERRNB","LOW","STRUC","@CODESIZE",
+		".ERRNDEF","LT","SUBTTL","COMM",".ERRNZ","MACRO","TBYTE","COMMENT","EVEN"
+		,"MASK",".TFCOND",".CONST","EXITM","MEDIUM","THIS",".CREF","EXTRN","MOD"
+		,"TITLE","@CURSEG","FAR",".MODEL","TYPE","@DATA","@FARDATA","NAME",".TYPE"
+		,".DATA",".FARDATA","NE","WIDTH","@DATA?","@FARDATA?","NEAR","WORD",".DATA",
+		"?",".FARDATA ? ","NOT","@WORDSIZE","@DATASIZE","@FILENAME","NOTHING",
+		".XALL","DB","FWORD","OFFSET",".XCREP","DD","GE","OR",".XLIST","XOR" };
+
+
 	if (file.valid == false) {
 		//throw std::runtime_error("Error, no file specified. Specify file using -f 'filename'");
 		std::cout << "Error, no file specified. Specify file using -f 'filename'" << std::endl;
@@ -79,6 +98,7 @@ int main(int argc, char** argv)
 	std::ifstream myfile(file.name);
 	if (myfile.is_open()) {
 		unsigned long int pc = 0;
+		unsigned long int pcmax = INT_MAX;
 		unsigned long int linenum = 0;
 		std::vector<std::string>cdms;
 		std::string line;
@@ -103,6 +123,28 @@ int main(int argc, char** argv)
 			}
 	
 			bool isMnemonicValid = false;
+
+			/*Check here for static ASM tags like ORG,END...*/
+
+		/*	if (strcmp(results[0],"ORG") {
+				//this is ORG TAG,PC to it
+				std::string addr = results[1];
+				addr.erase(std::remove(addr.begin(), addr.end(), '$'), addr.end());
+				pc = std::stoi(addr);
+				std::cout << pc;
+				continue;
+
+			}
+
+			if (results[0] == "END") {
+				//*this is ORG TAG,PC to it
+				std::string addr = results[1];
+				addr.erase(std::remove(addr.begin(), addr.end(), '$'), addr.end());
+				pcmax = std::stoi(addr);
+				continue;
+
+			}
+		*/
 			for (int i = 0; i < 10; i++) {
 				if (instructions[i].name == results[0]) {
 
@@ -126,11 +168,14 @@ int main(int argc, char** argv)
 						cdms.push_back(cache);
 					}
 					pc++;
+					if (pc > pcmax) {
+						std::cout << "Size of the code is too big for addres space you have chosen, please increase your address space" << std::endl;
+					}
 					isMnemonicValid = true;
 					break;
 				}
 			}
-
+			
 			if (isMnemonicValid == false) {
 				std::cout << "Error on line " << linenum << ": ";
 				std::cout << "Operation " << results[0] << " not on list of valid operations, aborting!" << std::endl;
