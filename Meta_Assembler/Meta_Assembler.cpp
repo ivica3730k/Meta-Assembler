@@ -94,7 +94,7 @@ int main(int argc, char** argv)
 			continue;
 		}
 	}
-
+	/*
 	instruction instructions[10] = {
 
 		{ "ADDI", "D", bits },
@@ -109,7 +109,7 @@ int main(int argc, char** argv)
 		{ "STA+", "FFFE", bits }
 
 	};
-
+	*/
 	std::vector<instruction> instrs;
 	instrs.push_back({ "ADDI", "D", bits });
 	instrs.push_back({ "JMP", "E", bits });
@@ -126,13 +126,17 @@ int main(int argc, char** argv)
 		"DOSSEG", "HIGH", "PAGE", "_", "DQ", "IF", "PARA,", ".", "DS", "IF1", "PROC", "/", "DT",
 		"IF2", "PTR", "=", "DUP", "IFB", "PUBLIC", "?", "DW", "IFDEF", "PURGE", "DWORD",
 		"IFGIF", "QWORD", ".186", "ELSE", "IFDE", ".RADIX", ".286", "END", "IFIDN",
-		"RECORD", ".286P", "ENDIF", "IFNB", "REPT", ".287", "ENDM", "IFNDEF", ".SALL", ".386", "ENDP", "INCLUDE", "SEG", ".386P", "ENDS", "INCLUDELIB", "SEGMENT",
+		"RECORD", ".286P", "ENDIF", "IFNB", "REPT", ".287", "ENDM", "IFNDEF", ".SALL", ".386",
+		"ENDP", "INCLUDE", "SEG", ".386P", "ENDS", "INCLUDELIB", "SEGMENT",
 		".387", "EQ", "IRP", ".SEQ", ".8086", "EQU", "IRPC", ".SFCOND", ".8087", ".ERR",
 		"LABEL", "SHL", "ALIGN", ".ERR1", ".LALL", "SHORT", ".ALPHA", ".ERR2", "LARGE",
 		"SHR", "AND", ".ERRB", "LE", "SIZE", "ASSUME", ".ERRDEF", "LENGTH", "SMALL", "AT",
 		".ERRDIF", ".LFCOND", "STACK", "BYTE", ".ERRE", ".LIST", "@STACK", ".CODE",
 		".ERRIDN", "LOCAL", ".STACK", "@CODE", ".ERRNB", "LOW", "STRUC", "@CODESIZE",
-		".ERRNDEF", "LT", "SUBTTL", "COMM", ".ERRNZ", "MACRO", "TBYTE", "COMMENT", "EVEN", "MASK", ".TFCOND", ".CONST", "EXITM", "MEDIUM", "THIS", ".CREF", "EXTRN", "MOD", "TITLE", "@CURSEG", "FAR", ".MODEL", "TYPE", "@DATA", "@FARDATA", "NAME", ".TYPE", ".DATA", ".FARDATA", "NE", "WIDTH", "@DATA?", "@FARDATA?", "NEAR", "WORD", ".DATA",
+		".ERRNDEF", "LT", "SUBTTL", "COMM", ".ERRNZ", "MACRO", "TBYTE", "COMMENT", "EVEN",
+		"MASK", ".TFCOND", ".CONST", "EXITM", "MEDIUM", "THIS", ".CREF", "EXTRN", "MOD", "TITLE",
+		"@CURSEG", "FAR", ".MODEL", "TYPE", "@DATA", "@FARDATA", "NAME", ".TYPE", ".DATA", ".FARDATA",
+		"NE", "WIDTH", "@DATA?", "@FARDATA?", "NEAR", "WORD", ".DATA",
 		"?", ".FARDATA ?", "NOT", "@WORDSIZE", "@DATASIZE", "@FILENAME", "NOTHING",
 		".XALL", "DB", "FWORD", "OFFSET", ".XCREP", "DD", "GE", "OR", ".XLIST", "XOR" };
 
@@ -155,25 +159,22 @@ int main(int argc, char** argv)
 			linenum++;
 			if (line == "")
 				continue;
-			int spaces = std::count(line.begin(), line.end(), ' ');
-			bool hasData = false;
-			std::vector<std::string> results;
-			if (spaces != 0) {
-				std::istringstream iss(line);
-				std::vector<std::string> filter_results((std::istream_iterator<std::string>(iss)), std::istream_iterator<std::string>());
-				results.push_back(filter_results[0]);
-				results.push_back(filter_results[1]);
-				hasData = true;
-			}
-			else {
-				results.push_back(line);
-				results.push_back("");
-			}
 
-			bool isMnemonicValid = false;
+			bool hasData = false;
+
+			std::vector<std::string> results;
+
+			std::istringstream iss(line);
+			std::string token;
+			int a = 0;
+			while (getline(iss, token, '\t')) { // but we can specify a different one
+				results.push_back(token);
+				a++;
+			}
+			if (a > 1)
+				hasData = true;
 
 			/*Check here for static ASM tags like ORG,END...*/
-
 			if (isInputKeyword(results[0], &keywords)) {
 
 				if (results[0] == "ORG") {
@@ -189,30 +190,34 @@ int main(int argc, char** argv)
 				continue;
 			}
 
-			for (int i = 0; i < sizeof(instructions) / sizeof(instructions[0]); i++) {
-				if (instructions[i].name == results[0]) {
+			bool isMnemonicValid = false;
+			std::vector<instruction>::iterator i;
+			for (i = instrs.begin(); i < instrs.end(); ++i) {
+				instruction ins = *i;
 
-					if (instructions[i].isKeyword(&keywords)) {
+				if (ins.name == results[0]) {
+
+					if (ins.isKeyword(&keywords)) {
 						std::cout << "Error on line " << linenum << " :";
-						std::cout << "Operation " << instructions[i].name << " is reserved assembler keyword" << std::endl;
+						std::cout << "Operation " << ins.name << " is reserved assembler keyword" << std::endl;
 					}
 
-					if (results[1].length() != instructions[i].arglen) {
+					if (results[1].length() != ins.arglen) {
 						std::cout << "Error on line " << linenum << " :";
-						std::cout << "Operation " << instructions[i].name << " can only be used with " << instructions[i].arglen << " byte argument!" << std::endl;
+						std::cout << "Operation " << ins.name << " can only be used with " << ins.arglen << " byte argument!" << std::endl;
 						return (0);
 					}
 
 					if (hasData == false) {
 						std::string cache = decToHex(pc);
 						cache += ":";
-						cache += instructions[i].code;
+						cache += ins.code;
 						cdms.push_back(cache);
 					}
 					else {
 						std::string cache = decToHex(pc);
 						cache += ":";
-						cache += instructions[i].code;
+						cache += ins.code;
 						cache += results[1];
 						cdms.push_back(cache);
 					}
