@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <iterator>
+#include "constants.h"
 
 //*********************************************CLASS FOR INSTRUCTION STORING****************************//
 class instruction {
@@ -73,18 +74,20 @@ std::string decToHex(int decimal_value)
 int main(int argc, char** argv)
 {
 	int bits = 16; //default arhitecture for system is 16 bits
-	//----------open file that is passed with -f argument----------
 	struct file {
 		bool valid = false;
 		std::string name = "";
 	};
-	file file;
+
+	file codefile;
+	file instrfile;
+	
 	for (int i = 0; i < argc; ++i) {
 
 		if (strcmp(argv[i], "-f") == 0) {
 			++i;
-			file.name = argv[i];
-			file.valid = true;
+			codefile.name = argv[i];
+			codefile.valid = true;
 			continue;
 		}
 
@@ -93,23 +96,15 @@ int main(int argc, char** argv)
 			bits = std::stoi(argv[i]);
 			continue;
 		}
+
+		if (strcmp(argv[i], "-i") == 0) {
+			++i;
+			instrfile.name = argv[i];
+			instrfile.valid = true;
+			continue;
+		}
 	}
-	/*
-	instruction instructions[10] = {
 
-		{ "ADDI", "D", bits },
-		{ "JMP", "E", bits },
-		{ "MOVEI", "C", bits },
-		{ "MOVE", "B", bits },
-		{ "STORE", "A", bits },
-		{ "LDD", "9", bits },
-		{ "BZ", "FE", bits },
-		{ "BNZ", "FD", bits },
-		{ "STA", "FFFF", bits },
-		{ "STA+", "FFFE", bits }
-
-	};
-	*/
 	std::vector<instruction> instrs;
 	instrs.push_back({ "ADDI", "D", bits });
 	instrs.push_back({ "JMP", "E", bits });
@@ -122,32 +117,14 @@ int main(int argc, char** argv)
 	instrs.push_back({ "STA", "FFFF", bits });
 	instrs.push_back({ "STA+", "FFFE", bits });
 
-	std::vector<std::string> keywords = { "$", "DF", "GROUP", "ORG", "*", "DGROUP", "GT", "%OUT", "+",
-		"DOSSEG", "HIGH", "PAGE", "_", "DQ", "IF", "PARA,", ".", "DS", "IF1", "PROC", "/", "DT",
-		"IF2", "PTR", "=", "DUP", "IFB", "PUBLIC", "?", "DW", "IFDEF", "PURGE", "DWORD",
-		"IFGIF", "QWORD", ".186", "ELSE", "IFDE", ".RADIX", ".286", "END", "IFIDN",
-		"RECORD", ".286P", "ENDIF", "IFNB", "REPT", ".287", "ENDM", "IFNDEF", ".SALL", ".386",
-		"ENDP", "INCLUDE", "SEG", ".386P", "ENDS", "INCLUDELIB", "SEGMENT",
-		".387", "EQ", "IRP", ".SEQ", ".8086", "EQU", "IRPC", ".SFCOND", ".8087", ".ERR",
-		"LABEL", "SHL", "ALIGN", ".ERR1", ".LALL", "SHORT", ".ALPHA", ".ERR2", "LARGE",
-		"SHR", "AND", ".ERRB", "LE", "SIZE", "ASSUME", ".ERRDEF", "LENGTH", "SMALL", "AT",
-		".ERRDIF", ".LFCOND", "STACK", "BYTE", ".ERRE", ".LIST", "@STACK", ".CODE",
-		".ERRIDN", "LOCAL", ".STACK", "@CODE", ".ERRNB", "LOW", "STRUC", "@CODESIZE",
-		".ERRNDEF", "LT", "SUBTTL", "COMM", ".ERRNZ", "MACRO", "TBYTE", "COMMENT", "EVEN",
-		"MASK", ".TFCOND", ".CONST", "EXITM", "MEDIUM", "THIS", ".CREF", "EXTRN", "MOD", "TITLE",
-		"@CURSEG", "FAR", ".MODEL", "TYPE", "@DATA", "@FARDATA", "NAME", ".TYPE", ".DATA", ".FARDATA",
-		"NE", "WIDTH", "@DATA?", "@FARDATA?", "NEAR", "WORD", ".DATA",
-		"?", ".FARDATA ?", "NOT", "@WORDSIZE", "@DATASIZE", "@FILENAME", "NOTHING",
-		".XALL", "DB", "FWORD", "OFFSET", ".XCREP", "DD", "GE", "OR", ".XLIST", "XOR" };
-
-	if (file.valid == false) {
-		//throw std::runtime_error("Error, no file specified. Specify file using -f 'filename'");
-		std::cout << "Error, no file specified. Specify file using -f 'filename'" << std::endl;
+	if (codefile.valid == false) {
+		//throw std::runtime_error("Error, no codefile specified. Specify codefile using -f 'filename'");
+		std::cout << "Error, no codefile specified. Specify codefile using -f 'filename'" << std::endl;
 		return 0;
 	}
 
-	//----------if file is valid read file line by line-----------
-	std::ifstream myfile(file.name);
+	//----------if codefile is valid read codefile line by line-----------
+	std::ifstream myfile(codefile.name);
 	if (myfile.is_open()) {
 		unsigned long int pc = 0;
 		unsigned long int pcmax = INT_MAX;
@@ -241,10 +218,10 @@ int main(int argc, char** argv)
 			return 0;
 		}
 
-		size_t lastindex = file.name.find_last_of(".");
-		file.name = file.name.substr(0, lastindex);
-		file.name += ".cdm";
-		std::ofstream myfile(file.name);
+		size_t lastindex = codefile.name.find_last_of(".");
+		codefile.name = codefile.name.substr(0, lastindex);
+		codefile.name += ".cdm";
+		std::ofstream myfile(codefile.name);
 
 		if (myfile.is_open()) {
 			std::vector<std::string>::iterator i;
@@ -256,7 +233,7 @@ int main(int argc, char** argv)
 	}
 
 	else {
-		std::cout << "Unable to open file";
+		std::cout << "Unable to open codefile";
 		return 0;
 	}
 
