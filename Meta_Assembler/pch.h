@@ -10,6 +10,7 @@
 #define PCH_H
 
 // TODO: add headers that you want to pre-compile here
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -17,4 +18,5 @@
 #include <fstream>
 #include <sstream>
 #include <iterator>
+#include <list>
 #endif //PCH_H
