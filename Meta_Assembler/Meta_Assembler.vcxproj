@@ -152,9 +152,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="constants.h" />
+    <ClInclude Include="functions.h" />
+    <ClInclude Include="instruction.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="instruction.cpp" />
     <ClCompile Include="Meta_Assembler.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -1,75 +1,7 @@
 #include "pch.h"
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iterator>
 #include "constants.h"
-
-//*********************************************CLASS FOR INSTRUCTION STORING****************************//
-class instruction {
-public:
-	instruction(const std::string& _name, const std::string& _code, int bitc);
-	std::string name;
-	std::string code;
-	int arglen;
-	bool isKeyword(std::vector<std::string>* keyw);
-};
-
-instruction::instruction(const std::string& _name, const std::string& _code, int bitc)
-{
-	name = _name;
-	code = _code;
-	arglen = (bitc / 4) - code.length();
-}
-
-bool instruction::isKeyword(std::vector<std::string>* keyw)
-{
-	std::vector<std::string>::iterator i;
-	for (i = keyw->begin(); i < keyw->end(); ++i) {
-		std::string cache = *i;
-		if (strcmp(cache.c_str(), name.c_str())) {
-			return false;
-		}
-	}
-	return true;
-}
-
-//*****************************************************************************************************//
-
-bool isInputKeyword(std::string input, std::vector<std::string>* keyw)
-{
-	std::vector<std::string>::iterator i;
-	for (i = keyw->begin(); i < keyw->end(); i++) {
-		std::string cache = *i;
-		if (cache == input) {
-			return true;
-		}
-	}
-	return false;
-}
-/*
-bool isInputKeyword(const char* input, std::vector<std::string>* keyw) {
-	std::vector<std::string>::iterator i;
-	for (i = keyw->begin(); i < keyw->end(); ++i) {
-		std::string cache = *i;
-		if (strcmp(cache.c_str(), input)) {
-			return true;
-		}
-	}
-	return false;
-}
-*/
-
-std::string decToHex(int decimal_value)
-{
-	std::stringstream ss;
-	ss << std::hex << decimal_value; // int decimal_value
-	std::string res(ss.str());
-	return res;
-}
+#include "instruction.h"
+#include "functions.h"
 
 int main(int argc, char** argv)
 {
@@ -97,7 +29,7 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if (strcmp(argv[i], "-i") == 0) {
+		if (strcmp(argv[i], "-d") == 0) {
 			++i;
 			instrfile.name = argv[i];
 			instrfile.valid = true;
@@ -106,16 +38,63 @@ int main(int argc, char** argv)
 	}
 
 	std::vector<instruction> instrs;
-	instrs.push_back({ "ADDI", "D", bits });
-	instrs.push_back({ "JMP", "E", bits });
-	instrs.push_back({ "MOVEI", "C", bits });
-	instrs.push_back({ "MOVE", "B", bits });
-	instrs.push_back({ "STORE", "A", bits });
-	instrs.push_back({ "LDD", "9", bits });
-	instrs.push_back({ "BZ", "FE", bits });
-	instrs.push_back({ "BNZ", "FD", bits });
-	instrs.push_back({ "STA", "FFFF", bits });
-	instrs.push_back({ "STA+", "FFFE", bits });
+	if (instrfile.valid == false) {
+		instrs.push_back({ "ADDI", "D", bits });
+		instrs.push_back({ "JMP", "E", bits });
+		instrs.push_back({ "MOVEI", "C", bits });
+		instrs.push_back({ "MOVE", "B", bits });
+		instrs.push_back({ "STORE", "A", bits });
+		instrs.push_back({ "LDD", "9", bits });
+		instrs.push_back({ "BZ", "FE", bits });
+		instrs.push_back({ "BNZ", "FD", bits });
+		instrs.push_back({ "STA", "FFFF", bits });
+		instrs.push_back({ "STA+", "FFFE", bits });
+	}
+	else {
+		std::ifstream instructionFile(instrfile.name);
+		if (instructionFile.is_open()) {
+			std::string line;
+			unsigned long int linen = 0;
+			while (getline(instructionFile, line)) {
+				std::transform(line.begin(), line.end(), line.begin(), ::toupper);
+
+				if (line == "") {
+					// skip blank lines
+					linen++;
+					continue;
+				}
+				if (line[0] == '*') {
+					linen++;
+					continue;
+				}
+
+				std::vector<std::string> results;
+				std::istringstream iss(line);
+				std::string token;
+				int a = 0;
+				while (getline(iss, token, '\t')) { // but we can specify a different one
+					results.push_back(token);
+				}
+				if (isInputKeyword(results[0], &keywords) == false) {
+					instruction cacheInstr(results[0], results[1], bits);
+					instrs.push_back(cacheInstr);
+				}
+				else {
+					std::cout << "Error in instruction file, line " << linen << " ." << results[0] << " is reserved ASM word!" << std::endl;
+					return 0;
+				}
+
+
+				linen++;
+			}
+			instructionFile.close();
+		}
+		else {
+			std::cout << "Unable to open instruction file!" << std::endl;
+			return 0;
+		}
+	}
+
 
 	if (codefile.valid == false) {
 		//throw std::runtime_error("Error, no codefile specified. Specify codefile using -f 'filename'");
@@ -133,14 +112,19 @@ int main(int argc, char** argv)
 		std::string line;
 		while (getline(myfile, line)) {
 			std::transform(line.begin(), line.end(), line.begin(), ::toupper);
-			linenum++;
-			if (line == "")
+			
+			if (line == "") {
+				linenum++;
 				continue;
+			}
+			if (line[0] == '*') {
+				linenum++;
+				continue;
+			}
 
 			bool hasData = false;
 
 			std::vector<std::string> results;
-
 			std::istringstream iss(line);
 			std::string token;
 			int a = 0;
@@ -207,9 +191,10 @@ int main(int argc, char** argv)
 
 			if (isMnemonicValid == false) {
 				std::cout << "Error on line " << linenum << ": ";
-				std::cout << "Operation " << results[0] << " not on list of valid operations, aborting!" << std::endl;
+				std::cout << "Operation " << results[0] << " not valid operation, aborting!" << std::endl;
 				return 0;
 			}
+			linenum++;
 		}
 		myfile.close();
 
@@ -236,6 +221,6 @@ int main(int argc, char** argv)
 		std::cout << "Unable to open codefile";
 		return 0;
 	}
-
+	std::cout << "CDM file created succesfully"<<std::endl;
 	return 1;
 }

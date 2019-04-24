@@ -1,12 +1,6 @@
 #pragma once
 #include "pch.h"
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iterator>
+
 
 std::vector<std::string> keywords = { "$", "DF", "GROUP", "ORG", "*", "DGROUP", "GT", "%OUT", "+",
 		"DOSSEG", "HIGH", "PAGE", "_", "DQ", "IF", "PARA,", ".", "DS", "IF1", "PROC", "/", "DT",
@@ -25,3 +19,4 @@ std::vector<std::string> keywords = { "$", "DF", "GROUP", "ORG", "*", "DGROUP", 
 		"NE", "WIDTH", "@DATA?", "@FARDATA?", "NEAR", "WORD", ".DATA",
 		"?", ".FARDATA ?", "NOT", "@WORDSIZE", "@DATASIZE", "@FILENAME", "NOTHING",
 		".XALL", "DB", "FWORD", "OFFSET", ".XCREP", "DD", "GE", "OR", ".XLIST", "XOR" };
+
