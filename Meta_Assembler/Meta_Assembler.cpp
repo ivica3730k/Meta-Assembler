@@ -2,11 +2,9 @@
 #include "constants.h"
 #include "instruction.h"
 #include "functions.h"
-#include "label.h"
 
 int main(int argc, char** argv)
 {
-
 	int bits = 16; //default arhitecture for system is 16 bits
 	struct file {
 		bool valid = false;
@@ -39,21 +37,18 @@ int main(int argc, char** argv)
 		}
 	}
 
-	std::vector<instruction> instructions;
-	std::vector<label> labels;
-
+	std::vector<instruction> instrs;
 	if (instrfile.valid == false) {
-		instructions.push_back({ "ADDI", "D", bits });
-		instructions.push_back({ "JMP", "E", bits });
-		instructions.push_back({ "MOVEI", "C", bits });
-		instructions.push_back({ "MOVE", "B", bits });
-		instructions.push_back({ "STORE", "A", bits });
-		instructions.push_back({ "LDD", "9", bits });
-		instructions.push_back({ "BZ", "FE", bits });
-		instructions.push_back({ "BNZ", "FD", bits });
-		instructions.push_back({ "STA", "FFFF", bits });
-		instructions.push_back({ "STA+", "FFFE", bits });
-		
+		instrs.push_back({ "ADDI", "D", bits });
+		instrs.push_back({ "JMP", "E", bits });
+		instrs.push_back({ "MOVEI", "C", bits });
+		instrs.push_back({ "MOVE", "B", bits });
+		instrs.push_back({ "STORE", "A", bits });
+		instrs.push_back({ "LDD", "9", bits });
+		instrs.push_back({ "BZ", "FE", bits });
+		instrs.push_back({ "BNZ", "FD", bits });
+		instrs.push_back({ "STA", "FFFF", bits });
+		instrs.push_back({ "STA+", "FFFE", bits });
 	}
 	else {
 		std::ifstream instructionFile(instrfile.name);
@@ -64,7 +59,6 @@ int main(int argc, char** argv)
 				std::transform(line.begin(), line.end(), line.begin(), ::toupper);
 
 				if (line == "") {
-
 					// skip blank lines
 					linen++;
 					continue;
@@ -83,12 +77,13 @@ int main(int argc, char** argv)
 				}
 				if (isInputKeyword(results[0], &keywords) == false) {
 					instruction cacheInstr(results[0], results[1], bits);
-					instructions.push_back(cacheInstr);
+					instrs.push_back(cacheInstr);
 				}
 				else {
 					std::cout << "Error in instruction file, line " << linen << " ." << results[0] << " is reserved ASM word!" << std::endl;
 					return 0;
 				}
+
 
 				linen++;
 			}
@@ -111,62 +106,20 @@ int main(int argc, char** argv)
 	std::ifstream myfile(codefile.name);
 	if (myfile.is_open()) {
 		unsigned long int pc = 0;
-		unsigned long int pcmax = LONG_MAX;
+		unsigned long int pcmax = INT_MAX;
 		unsigned long int linenum = 0;
 		std::vector<std::string> cdms;
 		std::string line;
-		bool isInLabel = false;
 		while (getline(myfile, line)) {
 			std::transform(line.begin(), line.end(), line.begin(), ::toupper);
 			
 			if (line == "") {
-				//end previous label
-				
-					if (labels.empty() == false) {
-						label cachel = labels.back();
-						labels.pop_back();
-						cachel.endadr = pc;
-						labels.push_back(cachel);
-						isInLabel = false;
-
-					}
-				
 				linenum++;
 				continue;
 			}
 			if (line[0] == '*') {
 				linenum++;
 				continue;
-			}
-
-			if (line.back() == ':') {
-				//this is label
-				/*
-				//end previous label
-				if (isInLabel) {
-					if (labels.empty() == false) {
-						label cachel = labels.back();
-						labels.pop_back();
-						cachel.endadr = pc;
-						labels.push_back(cachel);
-						isInLabel = false;
-
-					}
-				}
-				*/
-				line = line.substr(0, line.size() - 1);
-				if (isInputKeyword(line, &keywords)) {
-					std::cout << "Error on line " << linenum << " :";
-					std::cout << "Label " << line << " is reserved assembler keyword" << std::endl;
-					return(0);
-				}
-				label cachel;
-				cachel.name = line;
-				cachel.startadr = pc;
-				labels.push_back(cachel);
-				isInLabel = true;
-				continue;
-				
 			}
 
 			bool hasData = false;
@@ -200,7 +153,7 @@ int main(int argc, char** argv)
 
 			bool isMnemonicValid = false;
 			std::vector<instruction>::iterator i;
-			for (i = instructions.begin(); i < instructions.end(); ++i) {
+			for (i = instrs.begin(); i < instrs.end(); ++i) {
 				instruction ins = *i;
 
 				if (ins.name == results[0]) {
@@ -210,68 +163,33 @@ int main(int argc, char** argv)
 						std::cout << "Operation " << ins.name << " is reserved assembler keyword" << std::endl;
 					}
 
+					
+
 					if (hasData == false) {
-						std::string cache = decToHex(pc,bits);
+
+						if (results[1].length() != ins.arglen) {
+							std::cout << "Error on line " << linenum << " :";
+							std::cout << "Operation " << ins.name << " can only be used with " << ins.arglen << " byte argument!" << std::endl;
+							return (0);
+						}
+
+						std::string cache = decToHex(pc);
 						cache += ":";
 						cache += ins.code;
 						cdms.push_back(cache);
 					}
-
 					else {
-
-
-						bool isLabel = false;
-						label cacheLabel;
-						cacheLabel.name = results[1];
-
-						if (std::find(labels.begin(), labels.end(), cacheLabel) != labels.end()) {
-							isLabel = true;
-							std::vector<label>::iterator i;
-							for (i = labels.begin(); i < labels.end(); ++i) {
-								label l;
-								l = *i;
-								
-								if (l == cacheLabel) {
-								//	std::cout << l.name << l.startadr << std::endl;
-									cacheLabel = l;
-								//	std::cout << cacheLabel.name << cacheLabel.startadr << std::endl;
-								}
-
-							}
-						}
-
-						
-							if (isLabel = false) {
-
-								if (results[1].length() != ins.arglen) {
-									std::cout << "Error on line " << linenum << " :";
-									std::cout << "Operation " << ins.name << " can only be used with " << ins.arglen << " byte argument!" << std::endl;
-									return (0);
-								}
-
-								std::string cache = decToHex(pc,bits);
-								cache += ":";
-								cache += ins.code;
-								cache += results[1];
-								cdms.push_back(cache);
-							}
-							else {
-								//std::cout << cacheLabel.name << cacheLabel.startadr << std::endl;
-								std::string cache = decToHex(pc,bits);
-								cache += ":";
-								cache += ins.code;
-								cache += decToHex(cacheLabel.startadr,bits);
-								cdms.push_back(cache);
-								//std::cout << cache;
-							}
-
-						}
+						std::string cache = decToHex(pc);
+						cache += ":";
+						cache += ins.code;
+						cache += results[1];
+						cdms.push_back(cache);
 					}
 					pc++;
 
 					isMnemonicValid = true;
 					break;
-				
+				}
 			}
 
 			if (isMnemonicValid == false) {
