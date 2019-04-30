@@ -1,14 +1,16 @@
 #include "pch.h"
-#include "constants.h"
+#include "keywords.h"
 #include "instruction.h"
 #include "functions.h"
 #include "label.h"
+#include "constant.h"
 
 int main(int argc, char** argv)
 {
 
-	int bits = 16; //default arhitecture for system is 16 bits
-	struct file {
+	int bits = 16; // default arhitecture for system is 16 bits
+	struct file
+	{
 		bool valid = false;
 		std::string name = "";
 	};
@@ -41,6 +43,8 @@ int main(int argc, char** argv)
 
 	std::vector<instruction> instructions;
 	std::vector<label> labels;
+	std::vector<constant> constants;
+	
 
 	if (instrfile.valid == false) {
 		instructions.push_back({ "ADDI", "D", bits });
@@ -63,12 +67,12 @@ int main(int argc, char** argv)
 				std::transform(line.begin(), line.end(), line.begin(), ::toupper);
 
 				if (line == "") {
-
 					// skip blank lines
 					linen++;
 					continue;
 				}
 				if (line[0] == '*') {
+					//skip comment lines
 					linen++;
 					continue;
 				}
@@ -78,7 +82,10 @@ int main(int argc, char** argv)
 				std::string token;
 
 				int a = 0;
-				while (getline(iss, token, '\t')) { // but we can specify a different one
+				while (
+					getline(iss, token, '\t')) { // but we can specify a different one
+					if (token[0] == '*')  //inline comments
+						continue;
 					results.push_back(token);
 				}
 				if (isInputKeyword(results[0], &keywords) == false) {
@@ -86,7 +93,8 @@ int main(int argc, char** argv)
 					instructions.push_back(cacheInstr);
 				}
 				else {
-					std::cout << "Error in instruction file, line " << linen << " ." << results[0] << " is reserved ASM word!" << std::endl;
+					std::cout << "Error in instruction file, line " << linen << " ."
+						<< results[0] << " is reserved ASM word!" << std::endl;
 					return 0;
 				}
 
@@ -101,18 +109,17 @@ int main(int argc, char** argv)
 	}
 
 	if (codefile.valid == false) {
-		//throw std::runtime_error("Error, no codefile specified. Specify codefile using -f 'filename'");
-		std::cout << "Error, no codefile specified. Specify codefile using -f 'filename'" << std::endl;
+		std::cout
+			<< "Error, no codefile specified. Specify codefile using -f 'filename'"
+			<< std::endl;
 		return 0;
 	}
 
-	//label check run
+	// label check run
 	std::ifstream scanfile(codefile.name);
 	if (scanfile.is_open()) {
 		unsigned long int pc = 0;
-		unsigned long int pcmax = LONG_MAX;
 		unsigned long int linenum = 0;
-		//std::vector<std::string> cdms;
 		std::string line;
 		bool isInLabel = false;
 		while (getline(scanfile, line)) {
@@ -120,144 +127,69 @@ int main(int argc, char** argv)
 
 			if (line == "") {
 				continue;
-				std::cout << "isblank";
-				linenum++;
-				continue;
 			}
 			if (line[0] == '*') {
-				continue;
-				std::cout << "iscomment";
-				linenum++;
 				continue;
 			}
 
 			if (line.back() == ':') {
-				std::cout << "islabel";
+
 				line = line.substr(0, line.size() - 1);
 				if (isInputKeyword(line, &keywords)) {
 					std::cout << "Error on line " << linenum << " :";
-					std::cout << "Label " << line << " is reserved assembler keyword" << std::endl;
+					std::cout << "Label " << line << " is reserved assembler keyword"
+						<< std::endl;
 					return (0);
 				}
 				label cachel;
 				cachel.name = line;
 				cachel.startadr = pc;
 				labels.push_back(cachel);
-				std::cout << "addr of label : ";
-				std::cout << cachel.startadr;
+
 				continue;
 			}
-
-			bool hasData = false;
 
 			std::vector<std::string> results;
 			std::istringstream iss(line);
 			std::string token;
 			int a = 0;
 			while (getline(iss, token, '\t')) { // but we can specify a different one
+				if (token[0] == '*')  //inline comments
+					continue;
 				results.push_back(token);
 				a++;
 			}
-			if (a > 1) {
-				hasData = true;
-			}
-
-			std::cout << hasData;
 
 			/*Check here for static ASM tags like ORG,END...*/
-			if (isInputKeyword(results[0], &keywords)) {
 
-				if (results[0] == "ORG") {
-					std::string str = results[1];
-					str.erase(std::remove(str.begin(), str.end(), '$'), str.end());
-					pc = stoi(str);
-				}
-				if (results[0] == "END") {
-					std::string str = results[1];
-					str.erase(std::remove(str.begin(), str.end(), '$'), str.end());
-					pcmax = stoi(str);
-				}
+			
+
+			if (results[0] == "DC") {
+			
+				constant con;
+				con.name = results[1];
+				con.value = results[2];
+				constants.push_back(con);
 				continue;
+				
 			}
+				
 
-			bool isMnemonicValid = false;
+			
+
 			std::vector<instruction>::iterator i;
 			for (i = instructions.begin(); i < instructions.end(); ++i) {
 				instruction ins = *i;
 
 				if (ins.name == results[0]) {
-					//std::cout << pc << std::endl;
-					/*
-					if (hasData == false) {
-						std::string cache = decToHex(pc, bits);
-						cache += ":";
-						cache += ins.code;
-						cdms.push_back(cache);
-					}
-
-					else {
-
-						bool isLabel = false;
-						label cacheLabel;
-						cacheLabel.name = results[1];
-
-						if (std::find(labels.begin(), labels.end(), cacheLabel) != labels.end()) {
-							isLabel = true;
-							std::vector<label>::iterator i;
-							for (i = labels.begin(); i < labels.end(); ++i) {
-								label l;
-								l = *i;
-								if (l == cacheLabel) {
-									cacheLabel = l;
-								}
-							}
-						}
-
-						std::cout << "islbl";
-						std::cout << isLabel << std::endl;
-
-						if (isLabel == false) {
-
-							if (results[1].length() != ins.arglen) {
-								std::cout << "Error on line " << linenum << " :";
-								std::cout << "Operation " << ins.name << " can only be used with " << ins.arglen << " byte argument!" << std::endl;
-								return (0);
-							}
-							std::cout << "res are";
-							std::cout << results[1] << std::endl;
-							std::string cache = decToHex(pc, bits);
-							cache += ":";
-							cache += ins.code;
-							cache += results[1];
-							cdms.push_back(cache);
-						}
-
-						else {
-							std::cout << "in label mode";
-							std::string cache = decToHex(pc, bits);
-							cache += ":";
-							cache += ins.code;
-							cache += decToHex(cacheLabel.startadr, bits);
-							cdms.push_back(cache);
-						}
-					}
-*/
 					pc++;
 				}
-
-				isMnemonicValid = true;
 			}
 
-			if (isMnemonicValid == false) {
-				std::cout << "Error on line " << linenum << ": ";
-				std::cout << "Operation " << results[0] << " not valid operation, aborting!" << std::endl;
-				return 0;
-			}
 			linenum++;
 		}
 		scanfile.close();
 	}
-
 
 	//----------if codefile is valid read codefile line by line-----------
 	std::ifstream myfile(codefile.name);
@@ -267,37 +199,23 @@ int main(int argc, char** argv)
 		unsigned long int linenum = 0;
 		std::vector<std::string> cdms;
 		std::string line;
-		bool isInLabel = false;
 		while (getline(myfile, line)) {
 			std::transform(line.begin(), line.end(), line.begin(), ::toupper);
 
 			if (line == "") {
-				std::cout << "isblank";
 				linenum++;
 				continue;
 			}
 			if (line[0] == '*') {
-				std::cout << "iscomment";
 				linenum++;
 				continue;
 			}
 
 			if (line.back() == ':') {
-				std::cout << "islabel";
-				line = line.substr(0, line.size() - 1);
-				if (isInputKeyword(line, &keywords)) {
-					std::cout << "Error on line " << linenum << " :";
-					std::cout << "Label " << line << " is reserved assembler keyword" << std::endl;
-					return (0);
-				}
-				label cachel;
-				cachel.name = line;
-				cachel.startadr = pc;
-				labels.push_back(cachel);
-				std::cout << "found label";
+				//it is a label, labels were processed on first run
+				linenum++;
 				continue;
 			}
-
 			bool hasData = false;
 
 			std::vector<std::string> results;
@@ -305,14 +223,14 @@ int main(int argc, char** argv)
 			std::string token;
 			int a = 0;
 			while (getline(iss, token, '\t')) { // but we can specify a different one
+				if (token[0] == '*')  //inline comments
+					continue;
 				results.push_back(token);
 				a++;
 			}
 			if (a > 1) {
 				hasData = true;
 			}
-
-			std::cout << hasData;
 
 			/*Check here for static ASM tags like ORG,END...*/
 			if (isInputKeyword(results[0], &keywords)) {
@@ -336,7 +254,7 @@ int main(int argc, char** argv)
 				instruction ins = *i;
 
 				if (ins.name == results[0]) {
-					//std::cout << pc << std::endl;
+				
 					if (hasData == false) {
 						std::string cache = decToHex(pc, bits);
 						cache += ":";
@@ -361,34 +279,66 @@ int main(int argc, char** argv)
 								}
 							}
 						}
+
+						bool isConstant = false;
 						
-						std::cout << "islbl";
-						std::cout << isLabel << std::endl;
+						constant con;
+						con.name = results[1];
+						std::vector<constant>::iterator i;
+						if (std::find(constants.begin(), constants.end(), con) != constants.end()) {
+							isConstant = true;
+							
+							for (i = constants.begin(); i < constants.end(); ++i) {
+								
+								constant l;
+							
+								l = *i;
+								if (l == con) {
+									con = l;
+								}
+								
+							}
+						}
 
 						if (isLabel == false) {
 
-							if (results[1].length() != ins.arglen) {
-								std::cout << "Error on line " << linenum << " :";
-								std::cout << "Operation " << ins.name << " can only be used with " << ins.arglen << " byte argument!" << std::endl;
-								return (0);
+							if (isConstant == false) {
+								if (results[1].length() != ins.arglen) {
+									std::cout << "Error on line " << linenum << " :";
+									std::cout << "Operation " << ins.name
+										<< " can only be used with " << ins.arglen
+										<< " byte argument!" << std::endl;
+									return (0);
+								}
 							}
-							std::cout << "res are";
-							std::cout << results[1] << std::endl;
+
+
 							std::string cache = decToHex(pc, bits);
 							cache += ":";
 							cache += ins.code;
-							cache += results[1];
+
+
+							
+							if (isConstant == false) {
+							
+								cache += results[1];
+							}
+							else {
+							
+								cache += decToHex(con.returnValueAsLong(), bits);
+							
+							}
 							cdms.push_back(cache);
 						}
 
 						else {
-							std::cout << "in label mode";
+
 							std::string cache = decToHex(pc, bits);
 							cache += ":";
 							cache += ins.code;
 							cache += decToHex(cacheLabel.startadr, bits);
 							cdms.push_back(cache);
-							std::cout << "writen label :" << cache;
+
 						}
 					}
 
@@ -400,7 +350,8 @@ int main(int argc, char** argv)
 
 			if (isMnemonicValid == false) {
 				std::cout << "Error on line " << linenum << ": ";
-				std::cout << "Operation " << results[0] << " not valid operation, aborting!" << std::endl;
+				std::cout << "Operation " << results[0]
+					<< " not valid operation, aborting!" << std::endl;
 				return 0;
 			}
 			linenum++;
@@ -408,7 +359,9 @@ int main(int argc, char** argv)
 		myfile.close();
 
 		if (pc > pcmax) {
-			std::cout << "Size of the code is too big for addres space you have chosen, please increase your address space" << std::endl;
+			std::cout << "Size of the code is too big for addres space you have "
+				"chosen, please increase your address space"
+				<< std::endl;
 			return 0;
 		}
 

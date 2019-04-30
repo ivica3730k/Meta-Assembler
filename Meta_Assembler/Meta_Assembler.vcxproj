@@ -151,13 +151,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="constants.h" />
+    <ClInclude Include="constant.h" />
+    <ClInclude Include="keywords.h" />
     <ClInclude Include="functions.h" />
     <ClInclude Include="instruction.h" />
     <ClInclude Include="label.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="constant.cpp" />
     <ClCompile Include="instruction.cpp" />
     <ClCompile Include="label.cpp" />
     <ClCompile Include="Meta_Assembler.cpp" />
